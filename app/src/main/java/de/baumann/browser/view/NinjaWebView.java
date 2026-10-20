@@ -442,14 +442,15 @@ public class NinjaWebView extends WebView implements AlbumController {
 
         String defaultUA = WebSettings.getDefaultUserAgent(context);
         if (defaultUA != null && !defaultUA.isEmpty()) {
-            if (!defaultUA.contains("Mobile")) {
-                if (defaultUA.contains("Safari")) {
-                    return defaultUA.replace("Safari", "Mobile Safari");
+            String mobileUA = defaultUA.replace("; wv", "");
+            if (!mobileUA.contains("Mobile")) {
+                if (mobileUA.contains("Safari")) {
+                    mobileUA = mobileUA.replace("Safari", "Mobile Safari");
                 } else {
-                    return defaultUA + " Mobile Safari/537.36";
+                    mobileUA = mobileUA + " Mobile Safari/537.36";
                 }
             }
-            return defaultUA;
+            return mobileUA;
         }
         return "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36";
     }

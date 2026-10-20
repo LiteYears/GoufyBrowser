@@ -410,16 +410,7 @@ public class NinjaWebViewClient extends WebViewClient {
             //Spoof screen resolution, color depth: set values like in Tor browser, random values for device memory, hardwareConcurrency, remove battery, network connection, keyboard, media devices info, prevent sendBeacon
 
             view.evaluateJavascript("" +
-                    "Object.defineProperty(window, 'devicePixelRatio',{value:1});" +
-                    "Object.defineProperty(window.screen, 'width',{value:1000});" +
-                    "Object.defineProperty(window.screen, 'availWidth',{value:1000});" +
-                    "Object.defineProperty(window.screen, 'height',{value:900});" +
-                    "Object.defineProperty(window.screen, 'availHeight',{value:900});" +
                     "Object.defineProperty(window.screen, 'colorDepth',{value:24});" +
-                    "Object.defineProperty(window, 'outerWidth',{value:1000});" +
-                    "Object.defineProperty(window, 'outerHeight',{value:900});" +
-                    "Object.defineProperty(window, 'innerWidth',{value:1000});" +
-                    "Object.defineProperty(window, 'innerHeight',{value:900});" +
                     "Object.defineProperty(navigator, 'getBattery',{value:function(){}});" +
                     "const ram=Math.pow(2,Math.floor(Math.random() * 4));Object.defineProperty(navigator, 'deviceMemory',{value:ram});" +
                     "const hw=Math.pow(2,Math.floor(Math.random() * 4));Object.defineProperty(navigator, 'hardwareConcurrency',{value:hw});" +
@@ -442,7 +433,9 @@ public class NinjaWebViewClient extends WebViewClient {
             //do not allow ping on http only pages (tested with http://tests.caniuse.com)
         }
 
-        if (view.getSettings().getUseWideViewPort() && (view.getWidth()<1300)) view.evaluateJavascript("document.querySelector('meta[name=\"viewport\"]').setAttribute('content', 'width=1200px');", null);
+        if (ninjaWebView.isDesktopMode() && (view.getWidth()<1300)) {
+            view.evaluateJavascript("var vp = document.querySelector('meta[name=\"viewport\"]'); if (vp) { vp.setAttribute('content', 'width=1200px'); }", null);
+        }
         //  Client-side detection for GlobalPrivacyControl
         view.evaluateJavascript("if (navigator.globalPrivacyControl === undefined) { Object.defineProperty(navigator, 'globalPrivacyControl', { value: true, writable: false,configurable: false});} else {try { navigator.globalPrivacyControl = true;} catch (e) { console.error('globalPrivacyControl is not writable: ', e); }};",null);
         //  Script taken from:
