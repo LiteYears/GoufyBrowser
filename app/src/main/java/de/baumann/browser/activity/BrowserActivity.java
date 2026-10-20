@@ -40,7 +40,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.progressindicator.CircularProgressIndicator;
+import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.google.android.material.shape.CornerFamily;
 import com.google.android.material.shape.MaterialShapeDrawable;
 import com.google.android.material.shape.ShapeAppearanceModel;
@@ -90,7 +90,6 @@ import java.util.List;
 import java.util.Objects;
 
 import de.baumann.browser.BuildConfig;
-import de.baumann.browser.GithubStar;
 import de.baumann.browser.Utils;
 import de.baumann.browser.browser.AdBlock;
 import de.baumann.browser.browser.AlbumController;
@@ -323,11 +322,21 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         openTabSettings = new ArrayList<String>(Arrays.asList(TextUtils.split(sp.getString("openTabSettings", ""), "‚‗‚")));
         if (openTabs.size()>0 && openTabSettings.size()>0) {
             for (int counter = 0; counter < openTabs.size(); counter++) {
-                addAlbum(getString(R.string.app_name), openTabs.get(counter), BrowserContainer.size() < 1, openTabSettings.get(counter));
+                String tabUrl = openTabs.get(counter);
+                if (tabUrl != null && (tabUrl.contains("github.com/woheller69/browser") || tabUrl.trim().isEmpty())) {
+                    tabUrl = getHomeUrl();
+                }
+                addAlbum(getString(R.string.app_name), tabUrl, BrowserContainer.size() < 1, openTabSettings.get(counter));
             }
         }
-        FreeDroidWarn.showWarningOnUpgrade(this, BuildConfig.VERSION_CODE);
-        if (GithubStar.shouldShowStarDialog(this)) GithubStar.starDialog(this,"https://github.com/woheller69/browser");
+    }
+
+    public String getHomeUrl() {
+        String fav = sp.getString("favoriteURL", "");
+        if (fav == null || fav.trim().isEmpty() || fav.contains("github.com/woheller69/browser") || fav.equals(URL_ABOUT_BLANK)) {
+            return BrowserUnit.URL_HOME;
+        }
+        return fav;
     }
 
     @Override
@@ -385,7 +394,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         new Handler().postDelayed(() -> {
             dispatchIntent(getIntent());
             if (BrowserContainer.size() < 1) {  //if still no open Tab open default page
-                addAlbum(getString(R.string.app_name), Objects.requireNonNull(sp.getString("favoriteURL", "")), true, null);
+                addAlbum(getString(R.string.app_name), getHomeUrl(), true, null);
             }
         },100);  //for whatever reason sites via intent Action.View do not load without this delay
 
@@ -537,14 +546,16 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             addAlbum(getString(R.string.app_name), url, true, null);
             hideOverview();
         } else if (Intent.ACTION_VIEW.equals(action)) {
-            String data = Objects.requireNonNull(intent.getData()).toString();
-            if (data.startsWith(BrowserUnit.URL_SCHEME_MAIL_TO)) {
-                Intent mailintent = new Intent(Intent.ACTION_VIEW, Uri.parse(data));
-                ninjaWebView.getContext().startActivity(mailintent);
-            } else if (data.startsWith(BrowserUnit.URL_SCHEME_BLOB)){
-                BrowserUnit.download(context, ninjaWebView, data,null,null);
-            } else {
-                addAlbum(getString(R.string.app_name), data, true, null);
+            if (intent.getData() != null) {
+                String data = intent.getData().toString();
+                if (data.startsWith(BrowserUnit.URL_SCHEME_MAIL_TO)) {
+                    Intent mailintent = new Intent(Intent.ACTION_VIEW, Uri.parse(data));
+                    ninjaWebView.getContext().startActivity(mailintent);
+                } else if (data.startsWith(BrowserUnit.URL_SCHEME_BLOB)) {
+                    BrowserUnit.download(context, ninjaWebView, data, null, null);
+                } else {
+                    addAlbum(getString(R.string.app_name), data, true, null);
+                }
             }
             hideOverview();
         }
@@ -572,6 +583,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             else BrowserContainer.get(i).deactivate();
         }
 
+        ImageButton tab_add_new = dialogView.findViewById(R.id.tab_add_new);
+        if (tab_add_new != null) {
+            tab_add_new.setOnClickListener(v -> {
+                dialog_tabPreview.hide();
+                addAlbum(getString(R.string.app_name), getHomeUrl(), true, null);
+            });
+        }
+
     }
 
     @SuppressLint({"ClickableViewAccessibility", "UnsafeExperimentalUsageError"})
@@ -588,7 +607,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         omniBox_tab = findViewById(R.id.omniBox_tab);
         omniBox_tab.setOnClickListener(v -> showTabView());
         omniBox_tab.setOnLongClickListener(v -> {
-            addAlbum(getString(R.string.app_name), Objects.requireNonNull(sp.getString("favoriteURL", "")), true, null);
+            addAlbum(getString(R.string.app_name), getHomeUrl(), true, null);
             return true;
         });
 
@@ -732,7 +751,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                 showOverview();
                 break;
             case "09":
-                addAlbum(getString(R.string.app_name), Objects.requireNonNull(sp.getString("favoriteURL", "")), true, null);
+                addAlbum(getString(R.string.app_name), getHomeUrl(), true, null);
                 break;
             case "10":
                 removeAlbum(currentAlbumController);
@@ -1162,7 +1181,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         ib_info.setOnClickListener(view -> {
             if (ninjaWebView != null) {
                 dialog.cancel();
-                addAlbum("Instructions","https://github.com/woheller69/browser#Instructions",true, null);
+                addAlbum("Guide", BrowserUnit.URL_HELP, true, null);
             }
         });
     }
@@ -1303,6 +1322,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         this.cookieHosts = new Cookie(this.context);
         CookieManager manager = CookieManager.getInstance();
 
+        ImageView securityIcon = findViewById(R.id.omnibox_security_icon);
         String url = ninjaWebView.getUrl();
         if (url != null) {
             if (cookieHosts.isWhite(url) || sp.getBoolean("sp_cookies", true)) {
@@ -1311,40 +1331,33 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
             } else {
                 manager.setAcceptCookie(false);
             }
-            if (Objects.requireNonNull(ninjaWebView.getTitle()).isEmpty()) {
-                omniBox_text.setText(url);
-            } else {
-                omniBox_text.setText(ninjaWebView.getTitle());
-            }
-            if (url.startsWith(BrowserUnit.URL_SCHEME_HTTPS) || url.startsWith(BrowserUnit.URL_SCHEME_VIEW_SOURCE) || url.startsWith(BrowserUnit.URL_SCHEME_CONTENT)) {
-                omniBox_tab.setImageResource(R.drawable.icon_menu_light);
-                omniBox_tab.setOnClickListener(v -> showTabView());
-            } else if (url.equals(URL_ABOUT_BLANK)){
-                omniBox_tab.setImageResource(R.drawable.icon_menu_light);
-                omniBox_tab.setOnClickListener(v -> showTabView());
-                omniBox_text.setText("");
-            } else {
-                omniBox_tab.setImageResource(R.drawable.icon_alert);
 
-                RecordAction action = new RecordAction(context);
-                action.open(false);
-                final List<Record> list;
-                list = action.listBookmark(activity, filter, filterBy);
-                action.close();
-                for (Record record : list){
-                    if (record.getURL().equals(url)) {
-                        omniBox_tab.setOnClickListener(v -> showTabView());
-                        break;
-                    } else {
-                        omniBox_tab.setOnClickListener(v -> {
+            if (url.equals(BrowserUnit.URL_HOME) || url.equals(URL_ABOUT_BLANK)) {
+                omniBox_text.setText("");
+                omniBox_text.setHint(R.string.main_omnibox_input_hint);
+                if (securityIcon != null) {
+                    securityIcon.setImageResource(R.drawable.ic_globe);
+                    securityIcon.setOnClickListener(null);
+                }
+            } else {
+                if (Objects.requireNonNull(ninjaWebView.getTitle()).isEmpty()) {
+                    omniBox_text.setText(url);
+                } else {
+                    omniBox_text.setText(ninjaWebView.getTitle());
+                }
+                if (url.startsWith(BrowserUnit.URL_SCHEME_HTTPS) || url.startsWith(BrowserUnit.URL_SCHEME_VIEW_SOURCE) || url.startsWith(BrowserUnit.URL_SCHEME_CONTENT)) {
+                    if (securityIcon != null) {
+                        securityIcon.setImageResource(R.drawable.ic_lock_secure);
+                        securityIcon.setOnClickListener(null);
+                    }
+                } else {
+                    if (securityIcon != null) {
+                        securityIcon.setImageResource(R.drawable.icon_alert);
+                        securityIcon.setOnClickListener(v -> {
                             MaterialAlertDialogBuilder builderR = new MaterialAlertDialogBuilder(context);
                             builderR.setMessage(R.string.toast_unsecured);
                             builderR.setPositiveButton(R.string.app_ok, (dialog, whichButton) -> ninjaWebView.loadUrl(url.replace("http://", "https://")));
-                            builderR.setNegativeButton(R.string.app_cancel, (dialog, whichButton) -> {
-                                dialog.cancel();
-                                omniBox_tab.setImageResource(R.drawable.icon_menu_light);
-                                omniBox_tab.setOnClickListener(v2 -> showTabView());
-                            });
+                            builderR.setNegativeButton(R.string.app_cancel, (dialog, whichButton) -> dialog.cancel());
                             AlertDialog dialog = builderR.create();
                             dialog.show();
                             Objects.requireNonNull(dialog.getWindow()).setGravity(Gravity.BOTTOM);
@@ -1352,22 +1365,32 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     }
                 }
             }
+            omniBox_tab.setImageResource(R.drawable.icon_tab);
+            omniBox_tab.setOnClickListener(v -> showTabView());
         }
     }
 
     @Override
     public synchronized void updateProgress(int progress) {
-        CircularProgressIndicator progressBar = findViewById(R.id.main_progress_bar);
-        progressBar.setProgressCompat(progress, true);
+        LinearProgressIndicator progressBar = findViewById(R.id.main_progress_bar);
+        if (progressBar != null) {
+            progressBar.setProgressCompat(progress, true);
+        }
         ImageButton omnibox_refresh = findViewById(R.id.omnibox_refresh);
 
         if (progress != BrowserUnit.LOADING_STOPPED) updateOmniBox();
         if (progress < BrowserUnit.PROGRESS_MAX) {
-            progressBar.setVisibility(View.VISIBLE);
-            omnibox_refresh.setOnClickListener(v -> ninjaWebView.stopLoading());
+            if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
+            if (omnibox_refresh != null) {
+                omnibox_refresh.setImageResource(R.drawable.ic_stop);
+                omnibox_refresh.setOnClickListener(v -> ninjaWebView.stopLoading());
+            }
         } else {
-            progressBar.setVisibility(View.GONE);
-            omnibox_refresh.setOnClickListener(v -> reloadPage());
+            if (progressBar != null) progressBar.setVisibility(View.GONE);
+            if (omnibox_refresh != null) {
+                omnibox_refresh.setImageResource(R.drawable.icon_refresh_light);
+                omnibox_refresh.setOnClickListener(v -> reloadPage());
+            }
         }
     }
 
@@ -1678,7 +1701,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         ImageButton overflow_info = dialogView.findViewById(R.id.overflow_info);
         overflow_info.setOnClickListener(v -> {
             dialog_overflow.cancel();
-            addAlbum("Instructions","https://github.com/woheller69/browser#Instructions",true, null);
+            addAlbum("Guide", BrowserUnit.URL_HELP, true, null);
         });
 
         ImageButton overflow_print = dialogView.findViewById(R.id.overflow_print);
@@ -1728,7 +1751,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         menu_grid_tab.setOnItemClickListener((parent, view14, position, id) -> {
             dialog_overflow.cancel();
             if (position == 0) {
-                addAlbum(getString(R.string.app_name), Objects.requireNonNull(sp.getString("favoriteURL", "")), true, null);
+                addAlbum(getString(R.string.app_name), getHomeUrl(), true, null);
             } else if (position == 1) {
                 removeAlbum(currentAlbumController);
             } else if (position == 2) {

@@ -175,6 +175,14 @@ public class NinjaWebView extends WebView implements AlbumController {
         webSettings.setSafeBrowsingEnabled(true);
 
         webSettings.setUserAgentString(userAgent);
+        webSettings.setUseWideViewPort(true);
+        webSettings.setLoadWithOverviewMode(desktopMode);
+        webSettings.setDatabaseEnabled(true);
+        webSettings.setDomStorageEnabled(domStorageInherited);
+        webSettings.setAllowFileAccess(true);
+        webSettings.setAllowContentAccess(true);
+        webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
         webSettings.setSupportZoom(true);
         webSettings.setBuiltInZoomControls(true);
         webSettings.setDisplayZoomControls(false);
@@ -187,7 +195,7 @@ public class NinjaWebView extends WebView implements AlbumController {
         blockNetworkVideo = webSettings.getBlockNetworkImage(); //if images are blocked, videos of any kind are not allowed either
 
         webSettings.setGeolocationEnabled(sp.getBoolean("sp_location", false));
-        webSettings.setMediaPlaybackRequiresUserGesture(!sp.getBoolean("sp_camera", false)); //if Camera is allows this must be false, see NinjaWebChromeClient
+        webSettings.setMediaPlaybackRequiresUserGesture(!sp.getBoolean("sp_camera", false)); //if Camera is allowed this must be false
 
         if (sp.getBoolean("sp_autofill", false)) {
             this.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_YES);
@@ -302,14 +310,19 @@ public class NinjaWebView extends WebView implements AlbumController {
     public synchronized HashMap<String, String> getRequestHeaders(String url) {
         HashMap<String, String> requestHeaders = new HashMap<>();
         requestHeaders.put("DNT", "1");
-        //  Server-side detection for GlobalPrivacyControl
-        requestHeaders.put("Sec-GPC","1");
-        requestHeaders.put("X-Requested-With","com.duckduckgo.mobile.android");
-        requestHeaders.put("Save-Data", "on");
-        if (getUrl()!= null && url.startsWith(BrowserUnit.URL_SCHEME_HTTPS)){
+        // Server-side detection for GlobalPrivacyControl
+        requestHeaders.put("Sec-GPC", "1");
+        if (desktopMode) {
+            requestHeaders.put("Sec-CH-UA-Mobile", "?0");
+            requestHeaders.put("Sec-CH-UA-Platform", "\"Linux\"");
+        } else {
+            requestHeaders.put("Sec-CH-UA-Mobile", "?1");
+            requestHeaders.put("Sec-CH-UA-Platform", "\"Android\"");
+        }
+        if (getUrl() != null && url.startsWith(BrowserUnit.URL_SCHEME_HTTPS)) {
             try {
-                if (AdBlock.getDomain(getUrl()).endsWith(AdBlock.getDomain(url)) || AdBlock.getDomain(url).endsWith(AdBlock.getDomain(getUrl()))){
-                    requestHeaders.put("Referer", getUrl());  //add Referer when within same domain, parent domain, or subdomain and protocol is https://
+                if (AdBlock.getDomain(getUrl()).endsWith(AdBlock.getDomain(url)) || AdBlock.getDomain(url).endsWith(AdBlock.getDomain(getUrl()))) {
+                    requestHeaders.put("Referer", getUrl()); // add Referer when within same domain, parent domain, or subdomain and protocol is https://
                 }
             } catch (URISyntaxException ignored) { }
         }
@@ -417,42 +430,39 @@ public class NinjaWebView extends WebView implements AlbumController {
         return adBlockEnabled;
     }
 
-    public String getUserAgent(boolean desktopMode){
-        String mobilePrefix = "Mozilla/5.0 (Linux; Android "+ Build.VERSION.RELEASE + ")";
-        String desktopPrefix = "Mozilla/5.0 (X11; Linux "+ System.getProperty("os.arch") +")";
-
-        String newUserAgent=WebSettings.getDefaultUserAgent(context);
-        String prefix = newUserAgent.substring(0, newUserAgent.indexOf(")") + 1);
-
-        if (desktopMode) {
-            try {
-                newUserAgent=newUserAgent.replace(prefix,desktopPrefix);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            try {
-                newUserAgent=newUserAgent.replace(prefix,mobilePrefix);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+    public String getUserAgent(boolean desktopMode) {
+        String ownUserAgent = sp.getString("sp_userAgent", "");
+        if (!ownUserAgent.isEmpty() && sp.getBoolean("userAgentSwitch", false)) {
+            return ownUserAgent;
         }
 
-        String ownUserAgent = sp.getString("sp_userAgent", "");
-        if (!ownUserAgent.equals("") && (sp.getBoolean("userAgentSwitch",false))) newUserAgent = ownUserAgent;
-        return newUserAgent;
+        if (desktopMode) {
+            return "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+        }
+
+        String defaultUA = WebSettings.getDefaultUserAgent(context);
+        if (defaultUA != null && !defaultUA.isEmpty()) {
+            if (!defaultUA.contains("Mobile")) {
+                if (defaultUA.contains("Safari")) {
+                    return defaultUA.replace("Safari", "Mobile Safari");
+                } else {
+                    return defaultUA + " Mobile Safari/537.36";
+                }
+            }
+            return defaultUA;
+        }
+        return "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36";
     }
 
     public void toggleDesktopMode(boolean reload) {
-
-        desktopMode=!desktopMode;
-        String newUserAgent=getUserAgent(desktopMode);
+        desktopMode = !desktopMode;
+        String newUserAgent = getUserAgent(desktopMode);
         getSettings().setUserAgentString(newUserAgent);
-        getSettings().setUseWideViewPort(desktopMode);
-        getSettings().setSupportZoom(desktopMode);
+        getSettings().setUseWideViewPort(true);
         getSettings().setLoadWithOverviewMode(desktopMode);
+        getSettings().setSupportZoom(true);
 
-        if (reload) { reload();}
+        if (reload) { reload(); }
     }
 
     public void toggleAllowFingerprint (boolean reload) {

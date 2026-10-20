@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primaryColor">#3B82F6</color>
+    <color name="primaryDarkColor">#0B0F19</color>
+    <color name="secondaryColor">#60A5FA</color>
+    <color name="surfaceColorDay">#151D2F</color>
+    <color name="surfaceColorNight">#151D2F</color>
+    <color name="surfaceCard">#1E293B</color>
+    <color name="lightColor">#F8FAFC</color>
+    <color name="hintColor">#94A3B8</color>
+    <color name="secondaryContainerColor">#3B82F6</color>
+    <color name="capsuleBg">#151D2F</color>
+    <color name="capsuleBorder">#1E293B</color>
+    <color name="secureGreen">#34D399</color>
+    <color name="warningAmber">#FBBF24</color>
+</resources>

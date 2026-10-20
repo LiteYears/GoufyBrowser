@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <resources>
-
-    <color name="primaryColor">#7cb342</color>
-    <color name="primaryDarkColor">#36343B</color>
-    <color name="secondaryColor">#7cb342</color>
-    <color name="surfaceColorDay">#DDDDDD</color>
-    <color name="surfaceColorNight">#222222</color>
-    <color name="lightColor">#fafafa</color>
-    <color name="hintColor">#BDBDBD</color>
-    <color name="secondaryContainerColor">#507cb342</color>
-
+    <color name="primaryColor">#2563EB</color>
+    <color name="primaryDarkColor">#0F172A</color>
+    <color name="secondaryColor">#3B82F6</color>
+    <color name="surfaceColorDay">#FFFFFF</color>
+    <color name="surfaceColorNight">#1E293B</color>
+    <color name="surfaceCard">#FFFFFF</color>
+    <color name="lightColor">#0F172A</color>
+    <color name="hintColor">#64748B</color>
+    <color name="secondaryContainerColor">#3B82F6</color>
+    <color name="capsuleBg">#F1F5F9</color>
+    <color name="capsuleBorder">#CBD5E1</color>
+    <color name="secureGreen">#10B981</color>
+    <color name="warningAmber">#F59E0B</color>
 </resources>

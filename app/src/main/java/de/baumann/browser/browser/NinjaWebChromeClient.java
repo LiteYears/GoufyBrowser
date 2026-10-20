@@ -36,10 +36,11 @@ public class NinjaWebChromeClient extends WebChromeClient {
     public void onProgressChanged(WebView view, int progress) {
         super.onProgressChanged(view, progress);
         ninjaWebView.updateTitle(progress);
-        if (Objects.requireNonNull(view.getTitle()).isEmpty()) {
-            ninjaWebView.updateTitle(view.getUrl());
+        String title = view.getTitle();
+        if (title == null || title.isEmpty()) {
+            ninjaWebView.updateTitle(view.getUrl() != null ? view.getUrl() : "");
         } else {
-            ninjaWebView.updateTitle(view.getTitle());
+            ninjaWebView.updateTitle(title);
         }
         //ninjaWebView.updateFavicon();
     }

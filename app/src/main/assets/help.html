@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>User Guide &amp; Features</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --surface-color: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --accent-primary: #2563eb;
+            --border-color: #e2e8f0;
+            --badge-bg: #eff6ff;
+            --badge-text: #1d4ed8;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #0b0f19;
+                --surface-color: #151d2f;
+                --text-primary: #f8fafc;
+                --text-secondary: #94a3b8;
+                --accent-primary: #3b82f6;
+                --border-color: #1e293b;
+                --badge-bg: #1e293b;
+                --badge-text: #93c5fd;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            padding: 24px 16px 80px 16px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent-primary);
+            text-decoration: none;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 26px;
+            font-weight: 800;
+            margin-bottom: 6px;
+            color: var(--text-primary);
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+        }
+
+        .card h2 {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card p, .card ul {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .card ul {
+            padding-left: 20px;
+            margin-top: 6px;
+        }
+
+        .card li {
+            margin-bottom: 4px;
+        }
+
+        .badge {
+            display: inline-block;
+            background: var(--badge-bg);
+            color: var(--badge-text);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-left: auto;
+        }
+
+        .gesture-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 13px;
+        }
+
+        .gesture-item:last-child {
+            border-bottom: none;
+        }
+
+        .gesture-key {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .gesture-val {
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="file:///android_asset/home.html" class="back-link">&#8592; Back to Home</a>
+        <h1>Browser Guide</h1>
+        <p class="subtitle">Quick tips, privacy tools &amp; navigation features.</p>
+
+        <div class="card">
+            <h2>🛡️ Built-in AdBlocker <span class="badge">Active</span></h2>
+            <p>Integrated hosts-based ad-blocking powered by the curated StevenBlack list. Blocks tracking scripts, banner ads, and malware domains without extra extensions.</p>
+        </div>
+
+        <div class="card">
+            <h2>🍪 Cookie Banner Auto-Deny <span class="badge">Smart</span></h2>
+            <p>Automatically dismisses GDPR and cookie consent notices by selecting "Reject All" / "Deny", keeping your screen clean and preventing unwanted tracking cookies.</p>
+        </div>
+
+        <div class="card">
+            <h2>🔒 Anti-Fingerprinting &amp; WebRTC <span class="badge">Privacy</span></h2>
+            <p>Prevents websites from reading device fingerprints and blocks WebRTC requests that can leak your real local IP address even when using VPNs or proxies.</p>
+        </div>
+
+        <div class="card">
+            <h2>👆 Gestures &amp; Shortcuts</h2>
+            <div class="gesture-item">
+                <span class="gesture-key">Swipe Up on Toolbar</span>
+                <span class="gesture-val">Hide toolbar / New tab</span>
+            </div>
+            <div class="gesture-item">
+                <span class="gesture-key">Swipe Down on Toolbar</span>
+                <span class="gesture-val">Show toolbar / Tab preview</span>
+            </div>
+            <div class="gesture-item">
+                <span class="gesture-key">Long-Press Tab Icon</span>
+                <span class="gesture-val">Open new tab directly</span>
+            </div>
+            <div class="gesture-item">
+                <span class="gesture-key">Double-Tap Menu</span>
+                <span class="gesture-val">Quick site toggles (JS, Dark, Zoom)</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📜 UserScripts Support</h2>
+            <p>Customize websites with custom JavaScript user scripts. Manage scripts from <strong>Settings &gt; UserScripts</strong> to inject custom CSS or site enhancements.</p>
+        </div>
+    </div>
+</body>
+</html>

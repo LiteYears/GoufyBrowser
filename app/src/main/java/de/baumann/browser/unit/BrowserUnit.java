@@ -59,6 +59,8 @@ public class BrowserUnit {
 
     public static final String URL_ENCODING = "UTF-8";
     public static final String URL_ABOUT_BLANK = "about:blank";
+    public static final String URL_HOME = "file:///android_asset/home.html";
+    public static final String URL_HELP = "file:///android_asset/help.html";
     public static final String URL_SCHEME_ABOUT = "about:";
     public static final String URL_SCHEME_MAIL_TO = "mailto:";
     public static final String URL_SCHEME_FILE = "file://";

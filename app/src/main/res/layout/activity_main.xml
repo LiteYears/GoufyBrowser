@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     android:id="@+id/activity_main"
     xmlns:tools="http://schemas.android.com/tools"
@@ -11,162 +12,194 @@
     <FrameLayout
         android:id="@+id/main_content"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent"
+        android:layout_marginBottom="64dp" />
 
     <com.google.android.material.bottomappbar.BottomAppBar
         android:id="@+id/bottomAppBar"
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
+        android:layout_height="64dp"
         android:layout_gravity="bottom"
+        app:paddingBottomSystemWindowInsets="true"
+        app:paddingLeftSystemWindowInsets="false"
+        app:paddingRightSystemWindowInsets="false"
+        app:contentInsetStart="0dp"
+        app:contentInsetEnd="0dp"
+        app:contentInsetLeft="0dp"
+        app:contentInsetRight="0dp"
         style="@style/Widget.MaterialComponents.BottomAppBar.Colored">
 
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize">
+            android:layout_height="match_parent"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp">
 
+            <!-- Linear Progress Indicator spanning the top of the toolbar -->
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/main_progress_bar"
+                android:layout_width="match_parent"
+                android:layout_height="3dp"
+                android:layout_alignParentTop="true"
+                android:indeterminate="false"
+                android:max="100"
+                app:indicatorColor="@color/primaryColor"
+                app:trackColor="@android:color/transparent"
+                android:visibility="gone" />
+
+            <!-- Main Omnibox Row -->
             <RelativeLayout
                 android:id="@+id/omniBox"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="match_parent"
+                android:layout_centerVertical="true">
 
+                <!-- Tab Switcher Button (Left) -->
                 <ImageButton
                     android:id="@+id/omniBox_tab"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:scaleY="1.2"
-                    android:scaleX="1.2"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
                     android:layout_alignParentStart="true"
                     android:layout_centerVertical="true"
-                    android:layout_gravity="center_vertical|center_horizontal"
-                    android:layout_marginEnd="8dp"
                     android:background="?attr/actionBarItemBackground"
-                    android:src="@drawable/icon_menu_light" />
+                    android:contentDescription="@string/album_title_tab"
+                    android:src="@drawable/icon_tab" />
 
-                <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                    android:id="@+id/omniBox_input"
-                    android:dropDownAnchor="@id/omniBox_input"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_centerInParent="true"
-                    android:layout_toEndOf="@id/omniBox_tab"
-                    android:layout_toStartOf="@id/omnibox_overview"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginEnd="8dp"
-                    android:hint="@string/main_omnibox_input_hint"
-                    android:textAppearance="?attr/textAppearanceBody1"
-                    android:textStyle="bold"
-                    android:textColor="?colorLight"
-                    android:textColorHint="?colorHint"
-                    android:completionThreshold="1"
-                    android:imeOptions="actionGo"
-                    android:inputType="textUri"
-                    android:singleLine="true"
-                    android:selectAllOnFocus="true"
-                    android:background="@android:color/transparent" />
-
-                <ImageButton
-                    android:id="@+id/omnibox_overview"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_toStartOf="@id/omnibox_overflow"
-                    android:layout_centerVertical="true"
-                    android:layout_marginStart="6dp"
-                    android:layout_marginEnd="6dp"
-                    android:background="?attr/actionBarItemBackground"
-                    android:src="@drawable/icon_bookmark_light" />
-
+                <!-- Menu Overflow Button (Far Right) -->
                 <ImageButton
                     android:id="@+id/omnibox_overflow"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:scaleY="1.2"
-                    android:scaleX="1.2"
-                    android:layout_toStartOf="@id/omnibox_refresh"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:background="?attr/actionBarItemBackground"
+                    android:contentDescription="@string/setting_label"
+                    android:src="@drawable/icon_overflow_light" />
+
+                <!-- Bookmarks & History Button -->
+                <ImageButton
+                    android:id="@+id/omnibox_overview"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_toStartOf="@id/omnibox_overflow"
+                    android:layout_centerVertical="true"
+                    android:background="?attr/actionBarItemBackground"
+                    android:contentDescription="@string/album_title_bookmarks"
+                    android:src="@drawable/icon_bookmark_light" />
+
+                <!-- Modern Omnibox Capsule (Center) -->
+                <LinearLayout
+                    android:id="@+id/omniBox_capsule"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:layout_toEndOf="@id/omniBox_tab"
+                    android:layout_toStartOf="@id/omnibox_overview"
                     android:layout_centerVertical="true"
                     android:layout_marginStart="6dp"
                     android:layout_marginEnd="6dp"
-                    android:background="?attr/actionBarItemBackground"
-                    android:src="@drawable/icon_overflow_light" />
+                    android:background="@drawable/bg_omnibox_capsule"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="6dp">
 
-                <ImageButton
-                    android:id="@+id/omnibox_refresh"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:scaleY="1.2"
-                    android:scaleX="1.2"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:layout_marginStart="6dp"
-                    android:layout_marginEnd="12dp"
-                    android:background="?attr/actionBarItemBackground"
-                    android:src="@drawable/icon_refresh_light" />
+                    <ImageView
+                        android:id="@+id/omnibox_security_icon"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginEnd="6dp"
+                        android:src="@drawable/ic_lock_secure"
+                        android:contentDescription="@null" />
 
-                <com.google.android.material.progressindicator.CircularProgressIndicator
-                    android:id="@+id/main_progress_bar"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:indeterminate="true"
-                    android:layout_alignEnd="@id/omnibox_refresh"
-                    android:layout_centerVertical="true"
-                    android:layout_marginStart="6dp"
-                    android:layout_marginEnd="-10dp"
-                    app:indicatorSize="36dp" />
+                    <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                        android:id="@+id/omniBox_input"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@android:color/transparent"
+                        android:completionThreshold="1"
+                        android:dropDownAnchor="@id/omniBox_input"
+                        android:ellipsize="end"
+                        android:gravity="center_vertical"
+                        android:hint="@string/main_omnibox_input_hint"
+                        android:imeOptions="actionGo"
+                        android:inputType="textUri"
+                        android:selectAllOnFocus="true"
+                        android:singleLine="true"
+                        android:textAppearance="?attr/textAppearanceBody2"
+                        android:textColor="?colorLight"
+                        android:textColorHint="?colorHint"
+                        android:textStyle="normal" />
+
+                    <ImageButton
+                        android:id="@+id/omnibox_refresh"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_marginStart="4dp"
+                        android:background="?attr/actionBarItemBackground"
+                        android:contentDescription="@string/app_ok"
+                        android:src="@drawable/icon_refresh_light" />
+
+                </LinearLayout>
 
             </RelativeLayout>
 
+            <!-- Search On Page Row -->
             <RelativeLayout
                 android:id="@+id/searchBox"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="46dp"
+                android:layout_centerVertical="true"
+                android:background="@drawable/bg_omnibox_capsule"
+                android:paddingStart="12dp"
+                android:paddingEnd="8dp"
                 android:visibility="gone">
-
-                <ImageButton android:id="@+id/searchBox_cancel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_alignParentEnd="true"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginEnd="12dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/icon_close_light"
-                    android:background="?attr/actionBarItemBackground"/>
-
-                <ImageButton android:id="@+id/searchBox_down"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_toStartOf="@id/searchBox_cancel"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginEnd="8dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/icon_arrow_down_gest"
-                    android:background="?attr/actionBarItemBackground"/>
-
-                <ImageButton android:id="@+id/searchBox_up"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_toStartOf="@id/searchBox_down"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginEnd="8dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/icon_arrow_up_gest"
-                    android:background="?attr/actionBarItemBackground"/>
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/searchBox_input"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:layout_centerInParent="true"
+                    android:layout_alignParentStart="true"
                     android:layout_toStartOf="@id/searchBox_up"
-                    android:layout_marginStart="8dp"
                     android:layout_marginEnd="8dp"
-                    android:hint="@string/search_hint"
-                    android:textColor="?colorLight"
-                    android:textColorHint="?colorHint"
                     android:background="@android:color/transparent"
-                    android:textAppearance="?attr/textAppearanceBody1"
+                    android:ellipsize="start"
+                    android:hint="@string/search_hint"
                     android:imeOptions="actionDone"
                     android:inputType="textAutoCorrect"
                     android:singleLine="true"
-                    android:ellipsize="start" />
+                    android:textAppearance="?attr/textAppearanceBody2"
+                    android:textColor="?colorLight"
+                    android:textColorHint="?colorHint" />
+
+                <ImageButton
+                    android:id="@+id/searchBox_up"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_toStartOf="@id/searchBox_down"
+                    android:layout_centerVertical="true"
+                    android:layout_marginEnd="4dp"
+                    android:background="?attr/actionBarItemBackground"
+                    android:src="@drawable/icon_arrow_up_gest" />
+
+                <ImageButton
+                    android:id="@+id/searchBox_down"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_toStartOf="@id/searchBox_cancel"
+                    android:layout_centerVertical="true"
+                    android:layout_marginEnd="4dp"
+                    android:background="?attr/actionBarItemBackground"
+                    android:src="@drawable/icon_arrow_down_gest" />
+
+                <ImageButton
+                    android:id="@+id/searchBox_cancel"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:background="?attr/actionBarItemBackground"
+                    android:src="@drawable/icon_close_light" />
 
             </RelativeLayout>
 

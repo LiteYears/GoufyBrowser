@@ -96,8 +96,6 @@ public class NinjaWebViewClient extends WebViewClient {
             view.evaluateJavascript(script.getScript(),null);
         }
 
-        view.evaluateJavascript("var vlinks=document.getElementsByTagName('video'); for(let i=0;i<vlinks.length;i++){vlinks[i].pause()};", null);
-
         if (sp.getBoolean("sp_deny_cookie_banners",false)){ //click opt-out if possible
             String bannerBlockScript = BannerBlock.getBannerBlockScriptPageFinished();
             if (bannerBlockScript != null) {new Handler().postDelayed(() -> view.evaluateJavascript(bannerBlockScript,null), 50);}
@@ -489,7 +487,10 @@ public class NinjaWebViewClient extends WebViewClient {
         } else {
             // handle the url by implementing your logic
             String url = uri.toString();
-            if (url.startsWith(BrowserUnit.URL_SCHEME_HTTP) || url.startsWith(BrowserUnit.URL_SCHEME_HTTPS)) {
+            if (url.startsWith(BrowserUnit.URL_SCHEME_HTTP) || url.startsWith(BrowserUnit.URL_SCHEME_HTTPS)
+                    || url.startsWith(BrowserUnit.URL_SCHEME_FILE) || url.startsWith(BrowserUnit.URL_SCHEME_ABOUT)
+                    || url.startsWith(BrowserUnit.URL_SCHEME_CONTENT) || url.startsWith(BrowserUnit.URL_SCHEME_VIEW_SOURCE)
+                    || url.startsWith("javascript:")) {
                 if (sp.getBoolean("sp_invidious_redirect", false)) url = BrowserUnit.youtubeRedirect(url,sp.getString("sp_invidious_domain", "yewtu.be"));
                 ninjaWebView.loadUrl(url);
                 return true;
