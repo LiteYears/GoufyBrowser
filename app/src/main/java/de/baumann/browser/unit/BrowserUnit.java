@@ -72,81 +72,129 @@ public class BrowserUnit {
     public static final String URL_SCHEME_VIEW_SOURCE = "view-source:";
     public static final String URL_SCHEME_BLOB = "blob:";
 
+    public static final String URL_SCHEME_TEL = "tel:";
+    public static final String URL_SCHEME_SMS = "sms:";
+    public static final String URL_SCHEME_GEO = "geo:";
+    public static final String URL_SCHEME_MARKET = "market:";
+    public static final String URL_SCHEME_DATA = "data:";
+
     public static boolean isURL(String url) {
+        if (url == null || url.trim().isEmpty()) {
+            return false;
+        }
+        String raw = url.trim();
+        if (raw.contains(" ")) {
+            return false;
+        }
+        String lower = raw.toLowerCase(Locale.ROOT);
 
-
-        url = url.toLowerCase(Locale.getDefault());
-
-        if (url.startsWith(URL_ABOUT_BLANK)
-                || url.startsWith(URL_SCHEME_MAIL_TO)
-                || url.startsWith(URL_SCHEME_FILE)
-                || url.startsWith(URL_SCHEME_CONTENT)
-                || url.startsWith(URL_SCHEME_HTTP)
-                || url.startsWith(URL_SCHEME_HTTPS)
-                || url.startsWith(URL_SCHEME_VIEW_SOURCE)
-                || url.startsWith(URL_SCHEME_FTP)
-                || url.startsWith(URL_SCHEME_INTENT)) {
+        if (lower.startsWith(URL_ABOUT_BLANK)
+                || lower.startsWith(URL_SCHEME_ABOUT)
+                || lower.startsWith(URL_SCHEME_MAIL_TO)
+                || lower.startsWith(URL_SCHEME_FILE)
+                || lower.startsWith(URL_SCHEME_CONTENT)
+                || lower.startsWith(URL_SCHEME_HTTP)
+                || lower.startsWith(URL_SCHEME_HTTPS)
+                || lower.startsWith(URL_SCHEME_VIEW_SOURCE)
+                || lower.startsWith(URL_SCHEME_FTP)
+                || lower.startsWith(URL_SCHEME_INTENT)
+                || lower.startsWith(URL_SCHEME_BLOB)
+                || lower.startsWith(URL_SCHEME_DATA)
+                || lower.startsWith(URL_SCHEME_TEL)
+                || lower.startsWith(URL_SCHEME_SMS)
+                || lower.startsWith(URL_SCHEME_GEO)
+                || lower.startsWith("javascript:")) {
             return true;
         }
 
-        String regex = "^((ftp|http|https|intent)?://)"                      // support scheme
-                + "?(([0-9a-z_!~*'().&=+$%-]+: )?[0-9a-z_!~*'().&=+$%-]+@)?" // ftp的user@
-                + "(([0-9]{1,3}\\.){3}[0-9]{1,3}"                            // IP形式的URL -> 199.194.52.184
-                + "|"                                                        // 允许IP和DOMAIN（域名）
-                + "([0-9a-z_!~*'()-]+\\.)*"                                  // 域名 -> www.
-                + "([0-9a-z][0-9a-z-]{0,61})?[0-9a-z]\\."                    // 二级域名
-                + "[a-z]{2,6})"                                              // first level domain -> .com or .museum
-                + "(:[0-9]{1,4})?"                                           // 端口 -> :80
-                + "((/?)|"                                                   // a slash isn't required if there is no file name
-                + "(/[0-9a-z_!~*'().;?:@&=+$,%#-]+)+/?)$";
-        Pattern pattern = Pattern.compile(regex);
-        return pattern.matcher(url).matches();
+        // Support localhost, IPv4, IPv6, and any modern TLD (2-63 chars including IDN punycode xn--)
+        if (lower.startsWith("localhost") || lower.matches("^localhost(:[0-9]{1,5})?(/.*)?$")) {
+            return true;
+        }
+
+        if (android.util.Patterns.WEB_URL.matcher(raw).matches()) {
+            return true;
+        }
+
+        String regex = "^((ftp|http|https|intent)?://)?"
+                + "(([0-9a-z_!~*'().&=+$%-]+: )?[0-9a-z_!~*'().&=+$%-]+@)?"
+                + "(([0-9]{1,3}\\.){3}[0-9]{1,3}"
+                + "|\\[?[0-9a-f:]+\\]?"
+                + "|([0-9a-z_!~*'()-]+\\.)*([0-9a-z][0-9a-z-]{0,61})?[0-9a-z]\\.[a-z0-9-]{2,63})"
+                + "(:[0-9]{1,5})?"
+                + "((/?)|(/[0-9a-z_!~*'().;?:@&=+$,%#-]*)+/?)$";
+        Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+        return pattern.matcher(raw).matches();
     }
 
     public static String queryWrapper(Context context, String query) {
+        if (query == null) {
+            return URL_HOME;
+        }
+        query = query.trim();
+        if (query.isEmpty()) {
+            return URL_HOME;
+        }
 
         if (isURL(query)) {
-            if (query.startsWith(URL_SCHEME_ABOUT) || query.startsWith(URL_SCHEME_MAIL_TO)) {
+            String lower = query.toLowerCase(Locale.ROOT);
+            if (lower.startsWith(URL_SCHEME_ABOUT)
+                    || lower.startsWith(URL_SCHEME_MAIL_TO)
+                    || lower.startsWith(URL_SCHEME_FILE)
+                    || lower.startsWith(URL_SCHEME_CONTENT)
+                    || lower.startsWith(URL_SCHEME_VIEW_SOURCE)
+                    || lower.startsWith(URL_SCHEME_BLOB)
+                    || lower.startsWith(URL_SCHEME_DATA)
+                    || lower.startsWith(URL_SCHEME_INTENT)
+                    || lower.startsWith(URL_SCHEME_TEL)
+                    || lower.startsWith(URL_SCHEME_SMS)
+                    || lower.startsWith(URL_SCHEME_GEO)
+                    || lower.startsWith("javascript:")) {
                 return query;
             }
 
             if (!query.contains("://")) {
-                query = URL_SCHEME_HTTPS + query;
+                if (lower.startsWith("localhost") || lower.matches("^([0-9]{1,3}\\.){3}[0-9]{1,3}.*")) {
+                    query = URL_SCHEME_HTTP + query;
+                } else {
+                    query = URL_SCHEME_HTTPS + query;
+                }
             }
 
             return query;
         }
 
+        String encodedQuery = Uri.encode(query);
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
         String customSearchEngine = sp.getString("sp_search_engine_custom", "");
 
-        if (sp.getBoolean("searchEngineSwitch",false)){
-            return customSearchEngine + query;
+        if (sp.getBoolean("searchEngineSwitch", false) && !customSearchEngine.isEmpty()) {
+            return customSearchEngine + encodedQuery;
         } else {
             final int i = Integer.parseInt(Objects.requireNonNull(sp.getString("sp_search_engine", "4")));
             switch (i) {
                 case 1:
-                    return SEARCH_ENGINE_STARTPAGE_DE + query;
+                    return SEARCH_ENGINE_STARTPAGE_DE + encodedQuery;
                 case 2:
-                    return SEARCH_ENGINE_BAIDU + query;
+                    return SEARCH_ENGINE_BAIDU + encodedQuery;
                 case 3:
-                    return SEARCH_ENGINE_BING + query;
+                    return SEARCH_ENGINE_BING + encodedQuery;
                 case 4:
-                    return SEARCH_ENGINE_DUCKDUCKGO + query;
+                    return SEARCH_ENGINE_DUCKDUCKGO + encodedQuery;
                 case 5:
-                    return SEARCH_ENGINE_GOOGLE + query;
+                    return SEARCH_ENGINE_GOOGLE + encodedQuery;
                 case 6:
-                    return SEARCH_ENGINE_SEARX + query;
+                    return SEARCH_ENGINE_SEARX + encodedQuery;
                 case 7:
-                    return SEARCH_ENGINE_QWANT + query;
+                    return SEARCH_ENGINE_QWANT + encodedQuery;
                 case 8:
-                    return SEARCH_ENGINE_ECOSIA + query;
+                    return SEARCH_ENGINE_ECOSIA + encodedQuery;
                 case 9:
-                    return SEARCH_ENGINE_Metager + query;
+                    return SEARCH_ENGINE_Metager + encodedQuery;
                 case 10:
-                    return SEARCH_ENGINE_BRAVE + query;
+                    return SEARCH_ENGINE_BRAVE + encodedQuery;
                 default:
-                    return SEARCH_ENGINE_STARTPAGE + query;
+                    return SEARCH_ENGINE_STARTPAGE + encodedQuery;
             }
         }
     }

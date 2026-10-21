@@ -247,11 +247,66 @@ public class RecordAction {
         return record;
     }
 
+    public void addHistory(Record record) {
+        if (record == null
+                || record.getTitle() == null
+                || record.getTitle().trim().isEmpty()
+                || record.getURL() == null
+                || record.getURL().trim().isEmpty()) {
+            return;
+        }
+        database.execSQL(RecordUnit.CREATE_HISTORY);
+        deleteURL(record.getURL(), RecordUnit.TABLE_HISTORY);
+        ContentValues values = new ContentValues();
+        values.put(RecordUnit.COLUMN_TITLE, record.getTitle().trim());
+        values.put(RecordUnit.COLUMN_URL, record.getURL().trim());
+        values.put(RecordUnit.COLUMN_TIME, record.getTime() > 0 ? record.getTime() : System.currentTimeMillis());
+        database.insert(RecordUnit.TABLE_HISTORY, null, values);
+    }
+
+    public List<Record> listHistory() {
+        List<Record> list = new LinkedList<>();
+        database.execSQL(RecordUnit.CREATE_HISTORY);
+        Cursor cursor = database.query(
+                RecordUnit.TABLE_HISTORY,
+                new String[] {
+                        RecordUnit.COLUMN_TITLE,
+                        RecordUnit.COLUMN_URL,
+                        RecordUnit.COLUMN_TIME
+                },
+                null,
+                null,
+                null,
+                null,
+                RecordUnit.COLUMN_TIME + " DESC",
+                "100"
+        );
+        if (cursor == null) {
+            return list;
+        }
+        cursor.moveToFirst();
+        while (!cursor.isAfterLast()) {
+            Record record = new Record();
+            record.setTitle(cursor.getString(0));
+            record.setURL(cursor.getString(1));
+            record.setTime(cursor.getLong(2));
+            record.setIconColor(1);
+            record.setDesktopMode(false);
+            record.setJavascript(true);
+            record.setDomStorage(true);
+            list.add(record);
+            cursor.moveToNext();
+        }
+        cursor.close();
+        return list;
+    }
+
     public List<Record> listEntries (Activity activity) {
         List<Record> list = new ArrayList<>();
         RecordAction action = new RecordAction(activity);
         action.open(false);
         list.addAll(action.listBookmark(activity, false, 0)); //move bookmarks to top of list
+        list.addAll(action.listHistory());
         action.close();
         return list;
     }

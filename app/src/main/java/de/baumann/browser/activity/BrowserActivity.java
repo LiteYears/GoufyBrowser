@@ -1319,8 +1319,17 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         omniBox_text.clearFocus();
 
         ninjaWebView = (NinjaWebView) currentAlbumController;
+        if (ninjaWebView == null) return;
         this.cookieHosts = new Cookie(this.context);
         CookieManager manager = CookieManager.getInstance();
+
+        ImageButton omnibox_desktop = findViewById(R.id.omnibox_desktop);
+        if (omnibox_desktop != null) {
+            int tintColor = ninjaWebView.isDesktopMode()
+                    ? Utils.getThemeColor(this, R.attr.colorPrimary)
+                    : Utils.getThemeColor(this, R.attr.colorHint);
+            omnibox_desktop.setImageTintList(ColorStateList.valueOf(tintColor));
+        }
 
         ImageView securityIcon = findViewById(R.id.omnibox_security_icon);
         String url = ninjaWebView.getUrl();
@@ -1340,12 +1349,15 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     securityIcon.setOnClickListener(null);
                 }
             } else {
-                if (Objects.requireNonNull(ninjaWebView.getTitle()).isEmpty()) {
+                if (ninjaWebView.getTitle() == null || ninjaWebView.getTitle().isEmpty()) {
                     omniBox_text.setText(url);
                 } else {
                     omniBox_text.setText(ninjaWebView.getTitle());
                 }
-                if (url.startsWith(BrowserUnit.URL_SCHEME_HTTPS) || url.startsWith(BrowserUnit.URL_SCHEME_VIEW_SOURCE) || url.startsWith(BrowserUnit.URL_SCHEME_CONTENT)) {
+                if (url.startsWith(BrowserUnit.URL_SCHEME_HTTPS)
+                        || url.startsWith(BrowserUnit.URL_SCHEME_VIEW_SOURCE)
+                        || url.startsWith(BrowserUnit.URL_SCHEME_CONTENT)
+                        || url.startsWith(BrowserUnit.URL_SCHEME_FILE)) {
                     if (securityIcon != null) {
                         securityIcon.setImageResource(R.drawable.ic_lock_secure);
                         securityIcon.setOnClickListener(null);
@@ -1396,13 +1408,14 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
 
     @Override
     public void showFileChooser(ValueCallback<Uri[]> filePathCallback) {
-        if(mFilePathCallback != null) {
+        if (mFilePathCallback != null) {
             mFilePathCallback.onReceiveValue(null);
         }
         mFilePathCallback = filePathCallback;
         Intent contentSelectionIntent = new Intent(Intent.ACTION_GET_CONTENT);
         contentSelectionIntent.addCategory(Intent.CATEGORY_OPENABLE);
         contentSelectionIntent.setType("*/*");
+        contentSelectionIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
         Intent chooserIntent = new Intent(Intent.ACTION_CHOOSER);
         chooserIntent.putExtra(Intent.EXTRA_INTENT, contentSelectionIntent);
         //noinspection deprecation
@@ -1474,7 +1487,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         TextView menuTitle = dialogView.findViewById(R.id.menuTitle);
         menuTitle.setText(url);
 
-        FaviconHelper.setFavicon(this,dialogView,url,R.id.menu_icon,R.drawable.icon_image_broken);
+        FaviconHelper.setFavicon(this,dialogView,url,R.id.menu_icon,R.drawable.ic_globe);
 
         builder.setView(dialogView);
         AlertDialog dialog = builder.create();
@@ -1512,6 +1525,7 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
                     RecordAction action = new RecordAction(context);
                     action.open(true);
                     action.deleteURL(url, RecordUnit.TABLE_BOOKMARK);
+                    action.deleteURL(url, RecordUnit.TABLE_HISTORY);
                     action.close();
                     updateAutoComplete();
                 });
@@ -1569,12 +1583,6 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         gridList.add(gridList.size(), item_02);
         gridList.add(gridList.size(), item_03);
         gridList.add(gridList.size(), item_04);
-
-        //Removed because downloads do not work without referer in some cases:
-        //Pattern compiledPattern = Pattern.compile("\\.[^.]{2,8}$");
-        //Matcher matcher = compiledPattern.matcher(url);
-        //if ((type != SRC_ANCHOR_TYPE) || matcher.find())
-        //    gridList.add(gridList.size(), item_04);  // in case of SRC_ANCHOR_TYPE show "save as" only if url ends with a suffix that has a dot followed by 2 to 8 more characters
 
         GridView menu_grid = dialogView.findViewById(R.id.menu_grid);
         GridAdapter gridAdapter = new GridAdapter(context, gridList);
@@ -1689,7 +1697,50 @@ public class BrowserActivity extends AppCompatActivity implements BrowserControl
         TextView titleView = (TextView) dialogView.findViewById(R.id.title);
         titleView.setText(title);
         if (ninjaWebView.getFavicon()!=null) icon.setImageBitmap(ninjaWebView.getFavicon());
-        else icon.setImageResource(R.drawable.icon_image_broken);
+        else icon.setImageResource(R.drawable.ic_globe);
+
+        ImageButton overflow_back = dialogView.findViewById(R.id.overflow_back);
+        if (overflow_back != null) {
+            overflow_back.setAlpha(ninjaWebView.canGoBack() ? 1.0f : 0.4f);
+            overflow_back.setOnClickListener(v -> {
+                dialog_overflow.cancel();
+                if (ninjaWebView.canGoBack()) {
+                    WebBackForwardList mWebBackForwardList = ninjaWebView.copyBackForwardList();
+                    String historyUrl = mWebBackForwardList.getItemAtIndex(mWebBackForwardList.getCurrentIndex() - 1).getUrl();
+                    ninjaWebView.initPreferences(historyUrl);
+                    goBack_skipRedirects();
+                }
+            });
+        }
+
+        ImageButton overflow_forward = dialogView.findViewById(R.id.overflow_forward);
+        if (overflow_forward != null) {
+            overflow_forward.setAlpha(ninjaWebView.canGoForward() ? 1.0f : 0.4f);
+            overflow_forward.setOnClickListener(v -> {
+                dialog_overflow.cancel();
+                if (ninjaWebView.canGoForward()) {
+                    WebBackForwardList mWebBackForwardList = ninjaWebView.copyBackForwardList();
+                    String historyUrl = mWebBackForwardList.getItemAtIndex(mWebBackForwardList.getCurrentIndex() + 1).getUrl();
+                    ninjaWebView.initPreferences(historyUrl);
+                    ninjaWebView.goForward();
+                } else {
+                    NinjaToast.show(this, R.string.toast_webview_forward);
+                }
+            });
+        }
+
+        ImageButton overflow_desktop = dialogView.findViewById(R.id.overflow_desktop);
+        if (overflow_desktop != null) {
+            if (ninjaWebView.isDesktopMode()) {
+                overflow_desktop.setImageTintList(ColorStateList.valueOf(Utils.getThemeColor(this, R.attr.colorPrimary)));
+            }
+            overflow_desktop.setOnClickListener(v -> {
+                dialog_overflow.cancel();
+                ninjaWebView.toggleDesktopMode(true);
+                updateOmniBox();
+                NinjaToast.show(this, ninjaWebView.isDesktopMode() ? R.string.menu_desktopView : R.string.menu_mobileView);
+            });
+        }
 
         ImageButton overflow_settings = dialogView.findViewById(R.id.overflow_settings);
         overflow_settings.setOnClickListener(v -> {

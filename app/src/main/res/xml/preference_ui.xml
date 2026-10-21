@@ -16,7 +16,7 @@
 
         <SwitchPreference
             android:key="hideToolbar"
-            android:defaultValue="true"
+            android:defaultValue="false"
             android:title="@string/setting_title_hideToolbar"/>
 
         <SwitchPreference

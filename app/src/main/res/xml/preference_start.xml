@@ -32,12 +32,12 @@
 
     <SwitchPreference
         android:key="sp_autofill"
-        android:defaultValue="false"
+        android:defaultValue="true"
         android:title="@string/setting_title_autofill" />
 
     <SwitchPreference
         android:key="sp_drm"
-        android:defaultValue="false"
+        android:defaultValue="true"
         android:title="@string/hint_DRM_Media" />
 
     <SwitchPreference

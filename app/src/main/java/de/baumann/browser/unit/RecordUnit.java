@@ -46,10 +46,20 @@ public class RecordUnit {
             + " " + COLUMN_DOMAIN + " text"
             + ")";
 
+    public static final String TABLE_HISTORY = "HISTORY";
+
     public static final String CREATE_DOM = "CREATE TABLE "
             + TABLE_DOM
             + " ("
             + " " + COLUMN_DOMAIN + " text"
+            + ")";
+
+    public static final String CREATE_HISTORY = "CREATE TABLE IF NOT EXISTS "
+            + TABLE_HISTORY
+            + " ("
+            + " " + COLUMN_TITLE + " text,"
+            + " " + COLUMN_URL + " text,"
+            + " " + COLUMN_TIME + " long"
             + ")";
 
 }

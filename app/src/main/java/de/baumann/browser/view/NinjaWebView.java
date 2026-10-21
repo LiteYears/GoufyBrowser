@@ -176,7 +176,7 @@ public class NinjaWebView extends WebView implements AlbumController {
 
         webSettings.setUserAgentString(userAgent);
         webSettings.setUseWideViewPort(true);
-        webSettings.setLoadWithOverviewMode(desktopMode);
+        webSettings.setLoadWithOverviewMode(true);
         webSettings.setDatabaseEnabled(true);
         webSettings.setDomStorageEnabled(domStorageInherited);
         webSettings.setAllowFileAccess(true);
@@ -187,32 +187,38 @@ public class NinjaWebView extends WebView implements AlbumController {
         webSettings.setBuiltInZoomControls(true);
         webSettings.setDisplayZoomControls(false);
         webSettings.setSupportMultipleWindows(true);
+        webSettings.setJavaScriptCanOpenWindowsAutomatically(javaScriptInherited);
         webViewClient.enableAdBlock(adBlockEnabled);
-        webSettings.setTextZoom(Integer.parseInt(Objects.requireNonNull(sp.getString("sp_fontSize", "100"))));
+        try {
+            webSettings.setTextZoom(Integer.parseInt(Objects.requireNonNull(sp.getString("sp_fontSize", "100"))));
+        } catch (NumberFormatException ignored) {
+            webSettings.setTextZoom(100);
+        }
 
-        if (BrowserUnit.isUnmeteredConnection(context)) {webSettings.setBlockNetworkImage(false);}  //in unmetered Networks (usually WIFI) always load images
-        else webSettings.setBlockNetworkImage(!loadImagesInherited); //otherwise check setting
-        blockNetworkVideo = webSettings.getBlockNetworkImage(); //if images are blocked, videos of any kind are not allowed either
+        if (BrowserUnit.isUnmeteredConnection(context)) {
+            webSettings.setBlockNetworkImage(false);
+        } else {
+            webSettings.setBlockNetworkImage(!loadImagesInherited);
+        }
+        blockNetworkVideo = webSettings.getBlockNetworkImage();
 
         webSettings.setGeolocationEnabled(sp.getBoolean("sp_location", false));
-        webSettings.setMediaPlaybackRequiresUserGesture(!sp.getBoolean("sp_camera", false)); //if Camera is allowed this must be false
+        webSettings.setMediaPlaybackRequiresUserGesture(false); // Allow modern HTML5 audio/video and streaming sites to play smoothly
 
-        if (sp.getBoolean("sp_autofill", false)) {
+        if (sp.getBoolean("sp_autofill", true)) {
             this.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_YES);
         } else {
             this.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);
         }
 
         if (url != null) {
-
-            //check if url is a bookmark and apply settings accordingly
-            //if one of the previous sites was a bookmark keep settings
+            // Check if url is a bookmark and apply settings accordingly
             RecordAction action = new RecordAction(context);
             action.open(false);
             List<Record> list = action.listEntries((Activity) context);
             action.close();
-            for (Record record:list){
-                if (record.getURL().equals(url)){
+            for (Record record : list) {
+                if (record.getURL().equalsIgnoreCase(url)) {
                     if (record.getDesktopMode() != isDesktopMode()) toggleDesktopMode(false);
                     setJavaScript(record.getJavascript());
                     setDomStorage(record.getDomStorage());
@@ -225,28 +231,23 @@ public class NinjaWebView extends WebView implements AlbumController {
             CookieManager manager = CookieManager.getInstance();
             if (cookieHosts.isWhite(url) || sp.getBoolean("sp_cookies", true)) {
                 manager.setAcceptCookie(true);
-                if (!fingerPrintProtection){  //allow third party cookies if fingerprint protection is off
-                    manager.setAcceptThirdPartyCookies(this,true);
-                } else {
-                    manager.setAcceptThirdPartyCookies(this,false);
-                }
+                // Allow third-party cookies when cookies are enabled or domain is whitelisted so SSO, OAuth, and embedded players work reliably
+                manager.setAcceptThirdPartyCookies(this, !fingerPrintProtection || cookieHosts.isWhite(url) || sp.getBoolean("sp_cookies", true));
                 manager.getCookie(url);
             } else {
                 manager.setAcceptCookie(false);
-                manager.setAcceptThirdPartyCookies(this,false);
+                manager.setAcceptThirdPartyCookies(this, false);
             }
-            String  domain="";
+            String domain = "";
             try {
                 domain = AdBlock.getDomain(url);
             } catch (URISyntaxException e) {
-                //do not change setting if staying within same domain
                 setJavaScript(javaHosts.isWhite(url) || javaScriptInherited);
                 setDomStorage(DOMHosts.isWhite(url) || domStorageInherited);
-                e.printStackTrace();
             }
 
-            //do not change setting if staying within same domain
-            if (!oldDomain.equals(domain)){
+            // Do not change setting if staying within same domain
+            if (domain != null && !oldDomain.equals(domain)) {
                 setJavaScript(javaHosts.isWhite(url) || javaScriptInherited);
                 setDomStorage(DOMHosts.isWhite(url) || domStorageInherited);
                 setIsBookmark(false);
@@ -255,15 +256,23 @@ public class NinjaWebView extends WebView implements AlbumController {
             setOldDomain(url);
         }
 
-        if(sp.getBoolean("userProxy", false)) setProxy(sp.getString("sp_proxy", ""));
+        if (sp.getBoolean("userProxy", false)) {
+            String proxyRule = sp.getString("sp_proxy", "");
+            if (proxyRule != null && !proxyRule.trim().isEmpty()) {
+                setProxy(proxyRule.trim());
+            }
+        }
     }
 
-    private void setProxy(String rule) {  //e.g. from https://github.com/proxifly/free-proxy-list?tab=readme-ov-file, e.g. "socks4://199.102.104.70:4145"
-        if (WebViewFeature.isFeatureSupported(WebViewFeature.PROXY_OVERRIDE)){
-            ProxyConfig proxyConfig = new ProxyConfig.Builder().addProxyRule(rule).build();
-            ProxyController.getInstance().setProxyOverride(proxyConfig, command -> {}, () -> {});
+    private void setProxy(String rule) {
+        try {
+            if (WebViewFeature.isFeatureSupported(WebViewFeature.PROXY_OVERRIDE)) {
+                ProxyConfig proxyConfig = new ProxyConfig.Builder().addProxyRule(rule).build();
+                ProxyController.getInstance().setProxyOverride(proxyConfig, command -> {}, () -> {});
+            }
+        } catch (IllegalArgumentException e) {
+            Toast.makeText(context, R.string.app_error, Toast.LENGTH_SHORT).show();
         }
-
     }
 
     public void setOldDomain(String url){
@@ -343,13 +352,19 @@ public class NinjaWebView extends WebView implements AlbumController {
 
     @Override
     public synchronized void loadUrl(String url) {
-        initPreferences(BrowserUnit.queryWrapper(context, url.trim()));
+        if (url == null) return;
+        String wrappedUrl = BrowserUnit.queryWrapper(context, url.trim());
+        if (sp.getBoolean("sp_invidious_redirect", false)) {
+            wrappedUrl = BrowserUnit.youtubeRedirect(wrappedUrl, sp.getString("sp_invidious_domain", "yewtu.be"));
+        }
+        initPreferences(wrappedUrl);
         InputMethodManager imm = (InputMethodManager) this.context.getSystemService(Context.INPUT_METHOD_SERVICE);
-        imm.hideSoftInputFromWindow(this.getWindowToken(), 0);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(this.getWindowToken(), 0);
+        }
         resetFavicon();
-        stopped=false;
-        if (sp.getBoolean("sp_invidious_redirect", false)) url = BrowserUnit.youtubeRedirect(url,sp.getString("sp_invidious_domain", "yewtu.be"));
-        super.loadUrl(BrowserUnit.queryWrapper(context, url.trim()), getRequestHeaders(url));
+        stopped = false;
+        super.loadUrl(wrappedUrl, getRequestHeaders(wrappedUrl));
     }
 
     @Override
@@ -361,9 +376,8 @@ public class NinjaWebView extends WebView implements AlbumController {
         album.setAlbumTitle(title);
         ImageView icon = (ImageView) getAlbumView().findViewById(R.id.faviconView);
         icon.setVisibility(VISIBLE);
-        if (getFavicon()!=null) icon.setImageBitmap(getFavicon());
-        else icon.setImageResource(R.drawable.icon_image_broken);
-        //FaviconHelper.setFavicon(context, getAlbumView(), url, R.id.faviconView, R.drawable.icon_image_broken_light);
+        if (getFavicon() != null) icon.setImageBitmap(getFavicon());
+        else icon.setImageResource(R.drawable.ic_globe);
     }
 
     @Override
@@ -395,11 +409,11 @@ public class NinjaWebView extends WebView implements AlbumController {
         album.setAlbumTitle(title);
     }
 
-    public synchronized void updateFavicon () {
+    public synchronized void updateFavicon() {
         ImageView icon = (ImageView) getAlbumView().findViewById(R.id.faviconView);
         icon.setVisibility(VISIBLE);
-        if (getFavicon()!=null) icon.setImageBitmap(getFavicon());
-        else icon.setImageResource(R.drawable.icon_image_broken);
+        if (getFavicon() != null) icon.setImageBitmap(getFavicon());
+        else icon.setImageResource(R.drawable.ic_globe);
     }
 
     @Override
@@ -412,7 +426,7 @@ public class NinjaWebView extends WebView implements AlbumController {
         super.destroy();
     }
 
-    public boolean isLoadImagesInherited() {return loadImagesInherited;}
+    public boolean isLoadImagesInherited() { return loadImagesInherited; }
 
     public boolean isLoadFinish() {
         return getProgress() >= BrowserUnit.PROGRESS_MAX;
@@ -432,17 +446,17 @@ public class NinjaWebView extends WebView implements AlbumController {
 
     public String getUserAgent(boolean desktopMode) {
         String ownUserAgent = sp.getString("sp_userAgent", "");
-        if (!ownUserAgent.isEmpty() && sp.getBoolean("userAgentSwitch", false)) {
+        if (ownUserAgent != null && !ownUserAgent.isEmpty() && sp.getBoolean("userAgentSwitch", false)) {
             return ownUserAgent;
         }
 
         if (desktopMode) {
-            return "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+            return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
         }
 
         String defaultUA = WebSettings.getDefaultUserAgent(context);
         if (defaultUA != null && !defaultUA.isEmpty()) {
-            String mobileUA = defaultUA.replace("; wv", "");
+            String mobileUA = defaultUA.replace("; wv)", ")").replace("; wv", "").replace("Version/4.0 ", "");
             if (!mobileUA.contains("Mobile")) {
                 if (mobileUA.contains("Safari")) {
                     mobileUA = mobileUA.replace("Safari", "Mobile Safari");
@@ -452,7 +466,7 @@ public class NinjaWebView extends WebView implements AlbumController {
             }
             return mobileUA;
         }
-        return "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36";
+        return "Mozilla/5.0 (Linux; Android 14; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36";
     }
 
     public void toggleDesktopMode(boolean reload) {
@@ -460,7 +474,7 @@ public class NinjaWebView extends WebView implements AlbumController {
         String newUserAgent = getUserAgent(desktopMode);
         getSettings().setUserAgentString(newUserAgent);
         getSettings().setUseWideViewPort(true);
-        getSettings().setLoadWithOverviewMode(desktopMode);
+        getSettings().setLoadWithOverviewMode(true);
         getSettings().setSupportZoom(true);
 
         if (reload) { reload(); }

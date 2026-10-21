@@ -8,7 +8,7 @@ import de.baumann.browser.unit.RecordUnit;
 
 class RecordHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "browser.db";
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;
 
     RecordHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -21,14 +21,11 @@ class RecordHelper extends SQLiteOpenHelper {
         database.execSQL(RecordUnit.CREATE_DOM);
         database.execSQL(RecordUnit.CREATE_COOKIE);
         database.execSQL(RecordUnit.CREATE_BOOKMARK);
+        database.execSQL(RecordUnit.CREATE_HISTORY);
     }
 
-    // UPGRADE ATTENTION!!!
     @Override
     public void onUpgrade(SQLiteDatabase database, int oldVersion, int newVersion) {
-        switch(oldVersion) {
-            case 1:
-                // we want all updates, so no break statement here...
-        }
+        database.execSQL(RecordUnit.CREATE_HISTORY);
     }
 }

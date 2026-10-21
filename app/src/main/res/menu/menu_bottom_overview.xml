@@ -9,6 +9,12 @@
         android:icon="@drawable/icon_bookmark_light" />
 
     <item
+        android:id="@+id/history"
+        android:enabled="true"
+        android:title="@string/setting_title_history"
+        android:icon="@drawable/icon_history_light" />
+
+    <item
         android:id="@+id/menu"
         android:enabled="true"
         android:title="Menu"
